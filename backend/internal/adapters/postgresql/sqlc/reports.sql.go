@@ -14,7 +14,7 @@ import (
 const getAccountBalance = `-- name: GetAccountBalance :one
 SELECT
     a.id AS account_id,
-    a.initial_balance_cents + COALESCE(SUM(t.amount_cents), 0)::BIGINT AS balance_cents
+    (a.initial_balance_cents + COALESCE(SUM(t.amount_cents), 0))::BIGINT AS balance_cents
 FROM accounts a
 LEFT JOIN transactions t ON t.account_id = a.id
 WHERE a.id = $1
@@ -23,7 +23,7 @@ GROUP BY a.id, a.initial_balance_cents
 
 type GetAccountBalanceRow struct {
 	AccountID    pgtype.UUID `json:"account_id"`
-	BalanceCents int32       `json:"balance_cents"`
+	BalanceCents int64       `json:"balance_cents"`
 }
 
 func (q *Queries) GetAccountBalance(ctx context.Context, id pgtype.UUID) (GetAccountBalanceRow, error) {
@@ -36,23 +36,25 @@ func (q *Queries) GetAccountBalance(ctx context.Context, id pgtype.UUID) (GetAcc
 const getReconciledAccountBalance = `-- name: GetReconciledAccountBalance :one
 SELECT
     a.id AS account_id,
-    a.initial_balance_cents + COALESCE(SUM(t.amount_cents), 0)::BIGINT AS balance_cents
+    a.name AS account_name,
+    (a.initial_balance_cents + COALESCE(SUM(t.amount_cents), 0))::BIGINT AS balance_cents
 FROM accounts a
 LEFT JOIN transactions t
     ON t.account_id = a.id
    AND t.is_reconciled = true
 WHERE a.id = $1
-GROUP BY a.id, a.initial_balance_cents
+GROUP BY a.id, a.name, a.initial_balance_cents
 `
 
 type GetReconciledAccountBalanceRow struct {
 	AccountID    pgtype.UUID `json:"account_id"`
-	BalanceCents int32       `json:"balance_cents"`
+	AccountName  string      `json:"account_name"`
+	BalanceCents int64       `json:"balance_cents"`
 }
 
 func (q *Queries) GetReconciledAccountBalance(ctx context.Context, id pgtype.UUID) (GetReconciledAccountBalanceRow, error) {
 	row := q.db.QueryRow(ctx, getReconciledAccountBalance, id)
 	var i GetReconciledAccountBalanceRow
-	err := row.Scan(&i.AccountID, &i.BalanceCents)
+	err := row.Scan(&i.AccountID, &i.AccountName, &i.BalanceCents)
 	return i, err
 }

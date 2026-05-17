@@ -12,9 +12,18 @@ import (
 type Service interface {
 	CreateAccount(ctx context.Context, input CreateAccountInput) (*repo.Account, error)
 	GetAccount(ctx context.Context, id uuid.UUID) (*repo.Account, error)
+	GetAccountSummary(ctx context.Context, id uuid.UUID) (*AccountSummary, error)
 	ListActiveAccounts(ctx context.Context) ([]repo.Account, error)
 	UpdateAccount(ctx context.Context, input UpdateAccountInput) (*repo.Account, error)
 	DeactivateAccount(ctx context.Context, id uuid.UUID) error
+}
+
+type AccountSummary struct {
+	AccountID              uuid.UUID
+	AccountName            string
+	BalanceCents           int64
+	ReconciledBalanceCents int64
+	DifferenceCents        int64
 }
 
 type CreateAccountInput struct {
@@ -67,6 +76,30 @@ func (s *svc) GetAccount(ctx context.Context, id uuid.UUID) (*repo.Account, erro
 	}
 
 	return &account, nil
+}
+
+func (s *svc) GetAccountSummary(ctx context.Context, id uuid.UUID) (*AccountSummary, error) {
+	accountID := pgutil.ToPgUUID(id)
+
+	balance, err := s.repo.GetAccountBalance(ctx, accountID)
+	if err != nil {
+		return nil, dberrors.Map(err)
+	}
+
+	reconciled, err := s.repo.GetReconciledAccountBalance(ctx, accountID)
+	if err != nil {
+		return nil, dberrors.Map(err)
+	}
+
+	summary := &AccountSummary{
+		AccountID:              id,
+		AccountName:            reconciled.AccountName,
+		BalanceCents:           balance.BalanceCents,
+		ReconciledBalanceCents: reconciled.BalanceCents,
+	}
+	summary.DifferenceCents = summary.BalanceCents - summary.ReconciledBalanceCents
+
+	return summary, nil
 }
 
 func (s *svc) ListActiveAccounts(ctx context.Context) ([]repo.Account, error) {
