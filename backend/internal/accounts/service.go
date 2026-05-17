@@ -2,11 +2,11 @@ package accounts
 
 import (
 	"context"
-	"errors"
 
+	"github.com/cubancodepath/zerobudget/backend/internal/adapters/postgresql/dberrors"
 	repo "github.com/cubancodepath/zerobudget/backend/internal/adapters/postgresql/sqlc"
+	"github.com/cubancodepath/zerobudget/backend/internal/shared/pgutil"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service interface {
@@ -44,7 +44,7 @@ func NewService(repo repo.Querier) Service {
 
 func (s *svc) CreateAccount(ctx context.Context, input CreateAccountInput) (*repo.Account, error) {
 	params := repo.CreateAccountParams{
-		ID:                  toPgUUID(uuid.New()),
+		ID:                  pgutil.ToPgUUID(uuid.New()),
 		Name:                input.Name,
 		Type:                input.Type,
 		CurrencyCode:        input.CurrencyCode,
@@ -54,28 +54,33 @@ func (s *svc) CreateAccount(ctx context.Context, input CreateAccountInput) (*rep
 
 	account, err := s.repo.CreateAccount(ctx, params)
 	if err != nil {
-		return nil, err
+		return nil, dberrors.Map(err)
 	}
 
 	return &account, nil
 }
 
 func (s *svc) GetAccount(ctx context.Context, id uuid.UUID) (*repo.Account, error) {
-	account, err := s.repo.GetAccountByID(ctx, toPgUUID(id))
+	account, err := s.repo.GetAccountByID(ctx, pgutil.ToPgUUID(id))
 	if err != nil {
-		return nil, err
+		return nil, dberrors.Map(err)
 	}
 
 	return &account, nil
 }
 
 func (s *svc) ListActiveAccounts(ctx context.Context) ([]repo.Account, error) {
-	return s.repo.ListActiveAccounts(ctx)
+	accounts, err := s.repo.ListActiveAccounts(ctx)
+	if err != nil {
+		return nil, dberrors.Map(err)
+	}
+
+	return accounts, nil
 }
 
 func (s *svc) UpdateAccount(ctx context.Context, input UpdateAccountInput) (*repo.Account, error) {
 	params := repo.UpdateAccountParams{
-		ID:                  toPgUUID(input.ID),
+		ID:                  pgutil.ToPgUUID(input.ID),
 		Name:                input.Name,
 		Type:                input.Type,
 		CurrencyCode:        input.CurrencyCode,
@@ -85,24 +90,17 @@ func (s *svc) UpdateAccount(ctx context.Context, input UpdateAccountInput) (*rep
 
 	account, err := s.repo.UpdateAccount(ctx, params)
 	if err != nil {
-		return nil, err
+		return nil, dberrors.Map(err)
 	}
 
 	return &account, nil
 }
 
 func (s *svc) DeactivateAccount(ctx context.Context, id uuid.UUID) error {
-	return s.repo.DeactivateAccount(ctx, toPgUUID(id))
-}
-
-func toPgUUID(id uuid.UUID) pgtype.UUID {
-	return pgtype.UUID{Bytes: id, Valid: true}
-}
-
-func fromPgUUID(id pgtype.UUID) (uuid.UUID, error) {
-	if !id.Valid {
-		return uuid.Nil, errors.New("invalid pg UUID")
+	err := s.repo.DeactivateAccount(ctx, pgutil.ToPgUUID(id))
+	if err != nil {
+		return dberrors.Map(err)
 	}
 
-	return uuid.UUID(id.Bytes), nil
+	return nil
 }

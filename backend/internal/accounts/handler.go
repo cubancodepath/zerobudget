@@ -8,9 +8,9 @@ import (
 	"time"
 
 	repo "github.com/cubancodepath/zerobudget/backend/internal/adapters/postgresql/sqlc"
+	"github.com/cubancodepath/zerobudget/backend/internal/shared/apperrors"
+	"github.com/cubancodepath/zerobudget/backend/internal/shared/httputil"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type Handler struct {
@@ -51,22 +51,22 @@ type accountResponse struct {
 func (h *Handler) createAccount(w http.ResponseWriter, r *http.Request) {
 	var req accountRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid JSON body")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body")
 		return
 	}
 
 	if strings.TrimSpace(req.Name) == "" {
-		writeJSONError(w, http.StatusBadRequest, "name is required")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "name is required")
 		return
 	}
 
 	if !isValidAccountType(req.Type) {
-		writeJSONError(w, http.StatusBadRequest, "type must be one of: cash, checking, savings, credit_card")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "type must be one of: cash, checking, savings, credit_card")
 		return
 	}
 
 	if strings.TrimSpace(req.CurrencyCode) == "" {
-		writeJSONError(w, http.StatusBadRequest, "currency_code is required")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "currency_code is required")
 		return
 	}
 
@@ -87,13 +87,13 @@ func (h *Handler) createAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toAccountResponse(*account))
+	httputil.WriteJSON(w, http.StatusCreated, toAccountResponse(*account))
 }
 
 func (h *Handler) getAccount(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUIDPathParam(r, "id")
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid account id")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
@@ -103,7 +103,7 @@ func (h *Handler) getAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toAccountResponse(*account))
+	httputil.WriteJSON(w, http.StatusOK, toAccountResponse(*account))
 }
 
 func (h *Handler) listAccounts(w http.ResponseWriter, r *http.Request) {
@@ -118,34 +118,34 @@ func (h *Handler) listAccounts(w http.ResponseWriter, r *http.Request) {
 		items = append(items, toAccountResponse(account))
 	}
 
-	writeJSON(w, http.StatusOK, items)
+	httputil.WriteJSON(w, http.StatusOK, items)
 }
 
 func (h *Handler) updateAccount(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUIDPathParam(r, "id")
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid account id")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
 	var req accountRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid JSON body")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "invalid JSON body")
 		return
 	}
 
 	if strings.TrimSpace(req.Name) == "" {
-		writeJSONError(w, http.StatusBadRequest, "name is required")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "name is required")
 		return
 	}
 
 	if !isValidAccountType(req.Type) {
-		writeJSONError(w, http.StatusBadRequest, "type must be one of: cash, checking, savings, credit_card")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "type must be one of: cash, checking, savings, credit_card")
 		return
 	}
 
 	if strings.TrimSpace(req.CurrencyCode) == "" {
-		writeJSONError(w, http.StatusBadRequest, "currency_code is required")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "currency_code is required")
 		return
 	}
 
@@ -167,13 +167,13 @@ func (h *Handler) updateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toAccountResponse(*account))
+	httputil.WriteJSON(w, http.StatusOK, toAccountResponse(*account))
 }
 
 func (h *Handler) deactivateAccount(w http.ResponseWriter, r *http.Request) {
 	id, err := parseUUIDPathParam(r, "id")
 	if err != nil {
-		writeJSONError(w, http.StatusBadRequest, "invalid account id")
+		httputil.WriteJSONError(w, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
@@ -212,35 +212,22 @@ func isValidAccountType(accountType string) bool {
 }
 
 func writeMappedError(w http.ResponseWriter, err error) {
-	if errors.Is(err, pgx.ErrNoRows) {
-		writeJSONError(w, http.StatusNotFound, "resource not found")
+	if errors.Is(err, apperrors.ErrNotFound) {
+		httputil.WriteJSONError(w, http.StatusNotFound, "resource not found")
+		return
+	}
+	if errors.Is(err, apperrors.ErrAlreadyExists) {
+		httputil.WriteJSONError(w, http.StatusConflict, "resource already exists")
+		return
+	}
+	if errors.Is(err, apperrors.ErrInvalidReference) {
+		httputil.WriteJSONError(w, http.StatusBadRequest, "invalid relation reference")
+		return
+	}
+	if errors.Is(err, apperrors.ErrConstraintViolation) {
+		httputil.WriteJSONError(w, http.StatusBadRequest, "invalid value for constrained field")
 		return
 	}
 
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		switch pgErr.Code {
-		case "23505":
-			writeJSONError(w, http.StatusConflict, "resource already exists")
-			return
-		case "23503":
-			writeJSONError(w, http.StatusBadRequest, "invalid relation reference")
-			return
-		case "23514":
-			writeJSONError(w, http.StatusBadRequest, "invalid value for constrained field")
-			return
-		}
-	}
-
-	writeJSONError(w, http.StatusInternalServerError, "internal server error")
-}
-
-func writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
-}
-
-func writeJSONError(w http.ResponseWriter, status int, message string) {
-	writeJSON(w, status, map[string]string{"error": message})
+	httputil.WriteJSONError(w, http.StatusInternalServerError, "internal server error")
 }

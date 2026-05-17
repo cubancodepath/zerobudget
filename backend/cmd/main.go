@@ -8,6 +8,8 @@ import (
 	"os"
 
 	"github.com/cubancodepath/zerobudget/backend/internal/accounts"
+	"github.com/cubancodepath/zerobudget/backend/internal/categories"
+	"github.com/cubancodepath/zerobudget/backend/internal/payees"
 	db "github.com/cubancodepath/zerobudget/backend/internal/adapters/postgresql/sqlc"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -31,6 +33,10 @@ func main() {
 	queries := db.New(pool)
 	accountsService := accounts.NewService(queries)
 	accountsHandler := accounts.NewHandler(accountsService)
+	categoriesService := categories.NewService(queries)
+	categoriesHandler := categories.NewHandler(categoriesService)
+	payeesService := payees.NewService(queries)
+	payeesHandler := payees.NewHandler(payeesService)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +44,8 @@ func main() {
 		_, _ = w.Write([]byte("ok"))
 	})
 	accountsHandler.RegisterRoutes(mux)
+	categoriesHandler.RegisterRoutes(mux)
+	payeesHandler.RegisterRoutes(mux)
 
 	port := os.Getenv("PORT")
 	if port == "" {
