@@ -28,6 +28,7 @@ type Querier interface {
 	ListActiveAccounts(ctx context.Context) ([]Account, error)
 	ListCategories(ctx context.Context) ([]Category, error)
 	ListPayees(ctx context.Context) ([]Payee, error)
+	ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]Transaction, error)
 	ListTransactionsByAccount(ctx context.Context, arg ListTransactionsByAccountParams) ([]Transaction, error)
 	ListTransactionsByAccountAndDateRange(ctx context.Context, arg ListTransactionsByAccountAndDateRangeParams) ([]Transaction, error)
 	SetTransactionReconciled(ctx context.Context, arg SetTransactionReconciledParams) (Transaction, error)
@@ -35,6 +36,7 @@ type Querier interface {
 	UpdateCategoryName(ctx context.Context, arg UpdateCategoryNameParams) (Category, error)
 	UpdatePayeeName(ctx context.Context, arg UpdatePayeeNameParams) (Payee, error)
 	UpdateTransaction(ctx context.Context, arg UpdateTransactionParams) (Transaction, error)
+	UpsertPayeeByNameCaseInsensitive(ctx context.Context, arg UpsertPayeeByNameCaseInsensitiveParams) (Payee, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -109,6 +109,50 @@ func (q *Queries) GetTransactionByID(ctx context.Context, id pgtype.UUID) (Trans
 	return i, err
 }
 
+const listTransactions = `-- name: ListTransactions :many
+SELECT id, account_id, category_id, payee_id, amount_cents, transaction_date, is_reconciled, note, created_at, updated_at
+FROM transactions
+ORDER BY transaction_date DESC, created_at DESC
+LIMIT $1
+OFFSET $2
+`
+
+type ListTransactionsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]Transaction, error) {
+	rows, err := q.db.Query(ctx, listTransactions, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Transaction{}
+	for rows.Next() {
+		var i Transaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.CategoryID,
+			&i.PayeeID,
+			&i.AmountCents,
+			&i.TransactionDate,
+			&i.IsReconciled,
+			&i.Note,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTransactionsByAccount = `-- name: ListTransactionsByAccount :many
 SELECT id, account_id, category_id, payee_id, amount_cents, transaction_date, is_reconciled, note, created_at, updated_at
 FROM transactions

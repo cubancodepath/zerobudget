@@ -25,6 +25,13 @@ SELECT *
 FROM transactions
 WHERE id = $1;
 
+-- name: ListTransactions :many
+SELECT *
+FROM transactions
+ORDER BY transaction_date DESC, created_at DESC
+LIMIT $1
+OFFSET $2;
+
 -- name: ListTransactionsByAccount :many
 SELECT *
 FROM transactions

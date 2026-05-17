@@ -13,6 +13,18 @@ SELECT *
 FROM payees
 WHERE id = $1;
 
+-- name: UpsertPayeeByNameCaseInsensitive :one
+INSERT INTO payees (
+    id,
+    name
+) VALUES (
+    $1,
+    $2
+)
+ON CONFLICT (name) DO UPDATE
+SET updated_at = now()
+RETURNING *;
+
 -- name: ListPayees :many
 SELECT *
 FROM payees

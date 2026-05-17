@@ -126,3 +126,33 @@ func (q *Queries) UpdatePayeeName(ctx context.Context, arg UpdatePayeeNameParams
 	)
 	return i, err
 }
+
+const upsertPayeeByNameCaseInsensitive = `-- name: UpsertPayeeByNameCaseInsensitive :one
+INSERT INTO payees (
+    id,
+    name
+) VALUES (
+    $1,
+    $2
+)
+ON CONFLICT (name) DO UPDATE
+SET updated_at = now()
+RETURNING id, name, created_at, updated_at
+`
+
+type UpsertPayeeByNameCaseInsensitiveParams struct {
+	ID   pgtype.UUID `json:"id"`
+	Name string      `json:"name"`
+}
+
+func (q *Queries) UpsertPayeeByNameCaseInsensitive(ctx context.Context, arg UpsertPayeeByNameCaseInsensitiveParams) (Payee, error) {
+	row := q.db.QueryRow(ctx, upsertPayeeByNameCaseInsensitive, arg.ID, arg.Name)
+	var i Payee
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
