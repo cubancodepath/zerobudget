@@ -1,0 +1,9 @@
+# Ignore all environment files (root + nested folders)
+.env
+**/.env
+.env.*
+**/.env.*
+
+# Keep only example env templates tracked in git
+!.env.example
+!**/.env.example
