@@ -57,8 +57,35 @@ func main() {
 	}
 
 	addr := fmt.Sprintf(":%s", port)
+	allowedOrigin := os.Getenv("CORS_ALLOWED_ORIGIN")
+	if allowedOrigin == "" {
+		allowedOrigin = "http://localhost:3000"
+	}
+
 	log.Printf("server listening on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, withCORS(mux, allowedOrigin)); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
+}
+
+func withCORS(next http.Handler, allowedOrigin string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Vary", "Origin")
+		w.Header().Set("Vary", "Access-Control-Request-Method")
+		w.Header().Set("Vary", "Access-Control-Request-Headers")
+
+		origin := r.Header.Get("Origin")
+		if origin != "" && origin == allowedOrigin {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		}
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
