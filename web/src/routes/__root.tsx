@@ -1,4 +1,5 @@
 import { AppLayout } from "@heroui-pro/react";
+import { useLiveQuery } from "@tanstack/react-db";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -9,8 +10,9 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import TanStackQueryDevtools from "../infra/tanstack-query/devtools";
+import { accountsCollection } from "#/collections/accounts";
 import { AppSidebar } from "../components/app-sidebar";
+import TanStackQueryDevtools from "../infra/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -40,16 +42,18 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 	shellComponent: RootDocument,
 	component: RootLayout,
+	ssr: false,
 });
 
 function RootLayout() {
 	const router = useRouter();
+	const { data: accounts = [] } = useLiveQuery(accountsCollection);
 
 	return (
 		<AppLayout
 			sidebarCollapsible="icon"
 			navigate={(href) => router.navigate({ to: href })}
-			sidebar={<AppSidebar />}
+			sidebar={<AppSidebar accounts={accounts} />}
 		>
 			<Outlet />
 		</AppLayout>

@@ -1,20 +1,13 @@
-import { Sidebar } from "@heroui-pro/react";
 import { Avatar, Button } from "@heroui/react";
-import { Plus, Settings } from "lucide-react";
-import type { AccountType } from "#/core/accounts/types";
+import { Sidebar } from "@heroui-pro/react";
+import { Plus, PlusCircle, Settings } from "lucide-react";
+import type { Account } from "#/core/accounts/types";
 
 const STATIC_USER = {
 	name: "Bryan Valmaseda",
 	email: "bjvalmaseda.g@gmail.com",
 	initials: "BV",
 };
-
-const STATIC_ACCOUNTS = [
-	{ id: "1", name: "Checking", type: "checking" as AccountType, balanceCents: 245000 },
-	{ id: "2", name: "Savings", type: "savings" as AccountType, balanceCents: 820000 },
-	{ id: "3", name: "Chase Credit", type: "credit_card" as AccountType, balanceCents: -125000 },
-	{ id: "4", name: "Cash", type: "cash" as AccountType, balanceCents: 5000 },
-];
 
 function formatCents(cents: number) {
 	return new Intl.NumberFormat("en-US", {
@@ -25,15 +18,23 @@ function formatCents(cents: number) {
 	}).format(cents / 100);
 }
 
-export function AppSidebar() {
+interface AppSidebarProps {
+	accounts: Account[];
+}
+
+export function AppSidebar({ accounts }: AppSidebarProps) {
 	return (
 		<Sidebar>
 			<Sidebar.Header>
 				<div className="flex items-center gap-2.5 px-1 py-0.5">
 					<div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[--accent]">
-						<span className="text-sm font-bold text-[--accent-foreground]">ZB</span>
+						<span className="text-sm font-bold text-[--accent-foreground]">
+							ZB
+						</span>
 					</div>
-					<span className="truncate text-sm font-semibold tracking-tight">ZeroBudget</span>
+					<span className="truncate text-sm font-semibold tracking-tight">
+						ZeroBudget
+					</span>
 				</div>
 			</Sidebar.Header>
 
@@ -41,7 +42,7 @@ export function AppSidebar() {
 				<Sidebar.Group>
 					<Sidebar.GroupLabel>Accounts</Sidebar.GroupLabel>
 					<Sidebar.Menu>
-						{STATIC_ACCOUNTS.map((account) => (
+						{accounts.map((account) => (
 							<Sidebar.MenuItem
 								key={account.id}
 								href={`/accounts/${account.id}`}
@@ -49,9 +50,11 @@ export function AppSidebar() {
 							>
 								<Sidebar.MenuLabel>{account.name}</Sidebar.MenuLabel>
 								<Sidebar.MenuChip
-									className={account.balanceCents < 0 ? "text-[--danger]" : ""}
+									className={
+										account.initial_balance_cents < 0 ? "text-[--danger]" : ""
+									}
 								>
-									{formatCents(account.balanceCents)}
+									{formatCents(account.initial_balance_cents)}
 								</Sidebar.MenuChip>
 							</Sidebar.MenuItem>
 						))}
@@ -65,7 +68,7 @@ export function AppSidebar() {
 							className="justify-start gap-2"
 							onPress={() => {}}
 						>
-							<Plus size={14} />
+							<PlusCircle size={14} />
 							Add Account
 						</Button>
 					</div>
@@ -78,14 +81,17 @@ export function AppSidebar() {
 						<Avatar
 							aria-label={STATIC_USER.name}
 							className="shrink-0"
-							name={STATIC_USER.initials}
 							size="sm"
-						/>
+						>
+							<Avatar.Fallback>{STATIC_USER.initials}</Avatar.Fallback>
+						</Avatar>
 						<div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 							<span className="truncate text-sm font-medium leading-tight">
 								{STATIC_USER.name}
 							</span>
-							<span className="truncate text-xs text-[--muted]">{STATIC_USER.email}</span>
+							<span className="truncate text-xs text-[--muted]">
+								{STATIC_USER.email}
+							</span>
 						</div>
 						<Button
 							isIconOnly
