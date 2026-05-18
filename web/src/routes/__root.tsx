@@ -1,12 +1,16 @@
+import { AppLayout } from "@heroui-pro/react";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
+	Outlet,
 	Scripts,
+	useRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import TanStackQueryDevtools from "../infra/tanstack-query/devtools";
+import { AppSidebar } from "../components/app-sidebar";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
@@ -24,7 +28,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "TanStack Start Starter",
+				title: "ZeroBudget",
 			},
 		],
 		links: [
@@ -35,15 +39,35 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		],
 	}),
 	shellComponent: RootDocument,
+	component: RootLayout,
 });
+
+function RootLayout() {
+	const router = useRouter();
+
+	return (
+		<AppLayout
+			sidebarCollapsible="icon"
+			navigate={(href) => router.navigate({ to: href })}
+			sidebar={<AppSidebar />}
+		>
+			<Outlet />
+		</AppLayout>
+	);
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="light" data-theme="light">
+		<html
+			lang="en"
+			className="light"
+			data-theme="light"
+			suppressHydrationWarning
+		>
 			<head>
 				<HeadContent />
 			</head>
-			<body>
+			<body suppressHydrationWarning>
 				{children}
 				<TanStackDevtools
 					config={{
