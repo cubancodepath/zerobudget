@@ -59,9 +59,9 @@ function AccountDetailPage() {
 	const deleteAccountAction = useMemo(
 		() =>
 			accountsOfflineExecutor.createOfflineAction<{ accountId: string }>({
-				mutationFnName: "deleteAccount",
+				mutationFnName: "deactivateAccount",
 				onMutate: ({ accountId }) => {
-					accountsCollection.utils.writeDelete(accountId);
+					accountsCollection.delete(accountId);
 				},
 			}),
 		[accountsCollection, accountsOfflineExecutor],
@@ -121,9 +121,7 @@ function AccountDetailPage() {
 					>
 						Edit account
 					</Button>
-					<Button
-						variant="danger"
-						size="sm"
+					<Button variant="danger" size="sm"
 						onPress={() => {
 							modal.open({
 								render: ({ close }) => (
@@ -134,8 +132,7 @@ function AccountDetailPage() {
 										</Modal.Header>
 										<Modal.Body>
 											<p className="text-sm text-default-600">
-												Are you sure you want to delete <b>{account.name}</b>? This
-												action cannot be undone.
+												Are you sure you want to delete <b>{account.name}</b>?
 											</p>
 										</Modal.Body>
 										<Modal.Footer>

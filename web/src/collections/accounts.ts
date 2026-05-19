@@ -72,7 +72,7 @@ export function createAccountsOfflineExecutor(collection: AccountsCollection) {
 				collection.utils.writeUpsert(updated);
 			},
 
-			deleteAccount: async ({ transaction }) => {
+			deactivateAccount: async ({ transaction }) => {
 				const mutation = transaction.mutations[0];
 				await api.deactivateAccount(String(mutation.key));
 				collection.utils.writeDelete(mutation.key);
