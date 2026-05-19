@@ -1,5 +1,6 @@
 import { Button, Modal } from "@heroui/react";
 import { type ChangeEvent, type FormEvent, useState } from "react";
+import type { Account } from "#/core/accounts/types";
 import { Route } from "#/routes/__root";
 
 type CreateAccountModalProps = {
@@ -24,21 +25,34 @@ export function CreateAccountModal({ onClose }: CreateAccountModalProps) {
 	const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
-		const tx = accountsOfflineExecutor.createOfflineTransaction({
+		const createAccountAction = accountsOfflineExecutor.createOfflineAction<{
+			name: string;
+			type: Account["type"];
+			currencyCode: string;
+			initialAmount: string;
+			isActive: boolean;
+		}>({
 			mutationFnName: "createAccount",
+			onMutate: ({ name, type, currencyCode, initialAmount, isActive }) => {
+				accountsCollection.insert({
+					id: crypto.randomUUID(),
+					name,
+					type,
+					initial_balance_cents: Math.round(Number(initialAmount || 0) * 100),
+					currency_code: currencyCode,
+					is_active: isActive,
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+				});
+			},
 		});
 
-		tx.mutate(() => {
-			accountsCollection.insert({
-				id: crypto.randomUUID() as any,
-				name,
-				type: type as "checking" | "savings",
-				initial_balance_cents: Math.round(Number(initialAmount || 0) * 100),
-				currency_code: currencyCode,
-				is_active: true,
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString(),
-			});
+		createAccountAction({
+			name,
+			type: type as Account["type"],
+			currencyCode,
+			initialAmount,
+			isActive,
 		});
 
 		onClose();
