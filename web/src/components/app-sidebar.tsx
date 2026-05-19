@@ -48,7 +48,11 @@ export function AppSidebar({ accounts, isReady }: AppSidebarProps) {
 					<Sidebar.GroupLabel>Accounts</Sidebar.GroupLabel>
 					<Sidebar.Menu>
 						{accounts.map((account) => (
-							<Sidebar.MenuItem key={account.id} tooltip={account.name}>
+							<Sidebar.MenuItem
+								key={account.id}
+								href={`/accounts/${account.id}`}
+								tooltip={account.name}
+							>
 								<Sidebar.MenuLabel>{account.name}</Sidebar.MenuLabel>
 								<Sidebar.MenuChip
 									className={
