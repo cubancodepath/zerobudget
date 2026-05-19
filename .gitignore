@@ -7,3 +7,23 @@
 # Keep only example env templates tracked in git
 !.env.example
 !**/.env.example
+
+# Ignore node_modules
+node_modules
+**/node_modules
+
+# Build and tool caches
+.turbo
+**/.turbo
+.output
+**/.output
+
+# Local temp and backup files
+tmp
+tmp/
+**/tmp
+**/tmp/
+Makefile-old
+
+# Local dev machine files
+.DS_Store

@@ -1,0 +1,6 @@
+packages:
+  - web
+  - backend
+onlyBuiltDependencies:
+  - '@heroui-pro/react'
+  - '@zowe/secrets-for-zowe-sdk'

@@ -1,0 +1,17 @@
+{
+  "name": "zerobudget",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "turbo": "^2.9.14"
+  }
+}
