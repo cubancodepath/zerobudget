@@ -10,13 +10,20 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { accountsCollection } from "#/collections/accounts";
+import { useEffect, useState } from "react";
+import type {
+	AccountOfflineExecutor,
+	AccountsCollection,
+} from "#/collections/accounts";
+import { ModalProvider } from "#/components/modal";
 import { AppSidebar } from "../components/app-sidebar";
 import TanStackQueryDevtools from "../infra/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
+	accountsCollection: AccountsCollection;
+	accountsOfflineExecutor: AccountOfflineExecutor;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -47,16 +54,31 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootLayout() {
 	const router = useRouter();
-	const { data: accounts = [] } = useLiveQuery(accountsCollection);
+	const { accountsCollection, accountsOfflineExecutor } =
+		Route.useRouteContext();
+	const [ifOfflineReady, setIfOfflineReady] = useState(false);
+
+	useEffect(() => {
+		const isActive = true;
+		void accountsOfflineExecutor.waitForInit().finally(() => {
+			if (isActive) setIfOfflineReady(true);
+		});
+	}, [accountsOfflineExecutor]);
+
+	const { data: accounts = [] } = useLiveQuery((q) =>
+		q.from({ accounts: accountsCollection }),
+	);
 
 	return (
-		<AppLayout
-			sidebarCollapsible="icon"
-			navigate={(href) => router.navigate({ to: href })}
-			sidebar={<AppSidebar accounts={accounts} />}
-		>
-			<Outlet />
-		</AppLayout>
+		<ModalProvider>
+			<AppLayout
+				sidebarCollapsible="icon"
+				navigate={(href) => router.navigate({ to: href })}
+				sidebar={<AppSidebar accounts={accounts} isReady={ifOfflineReady} />}
+			>
+				<Outlet />
+			</AppLayout>
+		</ModalProvider>
 	);
 }
 

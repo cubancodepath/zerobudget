@@ -1,6 +1,8 @@
 import { Avatar, Button } from "@heroui/react";
 import { Sidebar } from "@heroui-pro/react";
-import { Plus, PlusCircle, Settings } from "lucide-react";
+import { PlusCircle, Settings } from "lucide-react";
+import { CreateAccountModal } from "#/components/accounts/create-account-modal";
+import { useModal } from "#/components/modal";
 import type { Account } from "#/core/accounts/types";
 
 const STATIC_USER = {
@@ -20,9 +22,12 @@ function formatCents(cents: number) {
 
 interface AppSidebarProps {
 	accounts: Account[];
+	isReady: boolean;
 }
 
-export function AppSidebar({ accounts }: AppSidebarProps) {
+export function AppSidebar({ accounts, isReady }: AppSidebarProps) {
+	const modal = useModal();
+
 	return (
 		<Sidebar>
 			<Sidebar.Header>
@@ -43,11 +48,7 @@ export function AppSidebar({ accounts }: AppSidebarProps) {
 					<Sidebar.GroupLabel>Accounts</Sidebar.GroupLabel>
 					<Sidebar.Menu>
 						{accounts.map((account) => (
-							<Sidebar.MenuItem
-								key={account.id}
-								href={`/accounts/${account.id}`}
-								tooltip={account.name}
-							>
+							<Sidebar.MenuItem key={account.id} tooltip={account.name}>
 								<Sidebar.MenuLabel>{account.name}</Sidebar.MenuLabel>
 								<Sidebar.MenuChip
 									className={
@@ -66,7 +67,13 @@ export function AppSidebar({ accounts }: AppSidebarProps) {
 							variant="outline"
 							size="sm"
 							className="justify-start gap-2"
-							onPress={() => {}}
+							onPress={() => {
+								modal.open({
+									isKeyboardDismissDisabled: true,
+									render: ({ close }) => <CreateAccountModal onClose={close} />,
+								});
+							}}
+							isDisabled={!isReady}
 						>
 							<PlusCircle size={14} />
 							Add Account
